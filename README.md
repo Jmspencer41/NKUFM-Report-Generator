@@ -16,7 +16,6 @@ This application automates the time-consuming process of manually creating proje
 
 ### System Requirements
 - Windows 10 or later
-- Java Runtime Environment (JRE) 11 or higher
 - Microsoft Excel (for viewing source files)
 - PDF viewer (Adobe Reader, etc.)
 
