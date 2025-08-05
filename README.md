@@ -12,7 +12,7 @@ This application automates the time-consuming process of manually creating proje
 
 ## Download
 
-[![Download Latest Release](https://img.shields.io/github/v/release/Jmspencer41/Report-Generator?label=Download&style=for-the-badge)](https://github.com/Jmspencer41/NKUFM-Report-Generator/releases/tag/v1.0.0)
+[![Download Latest Release](https://github.com/Jmspencer41/NKUFM-Report-Generator/releases/tag/v1.0.0)
 
 ### System Requirements
 - Windows 10 or later
