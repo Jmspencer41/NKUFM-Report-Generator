@@ -4,7 +4,6 @@ import java.awt.Color;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,12 +17,11 @@ import org.apache.poi.ss.usermodel.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Controller {
     private static final Logger logger = LogManager.getLogger(Controller.class);
 
-    @FXML
-    private TextField rowNumberField;
     @FXML
     private Button selectFileButton;
     @FXML
@@ -44,13 +42,15 @@ public class Controller {
     private String architect;
     private String engineer;
     private String contractor;
-    private int internalOrder;
-    private int costCenter;
     private int fundFY;
     private float percentComplete;
-    private float budgetTotal;
-    private float budgetUsed;
-    private float budgetRemaining;
+    private int costCenter;
+    private ArrayList<Integer> internalOrder = new ArrayList<>();
+    private ArrayList<Float> budgetTotal = new ArrayList<>();
+    private ArrayList<Float> expenses = new ArrayList<>();
+    private ArrayList<Float> commitments = new ArrayList<>();
+    private ArrayList<Float> budgetRemaining = new ArrayList<>();
+
 
     @FXML
     private void initialize() throws IOException {
@@ -124,19 +124,29 @@ public class Controller {
         comments = cleanString(getCellString(row, 4, ""));
         workPhase = cleanString(getCellString(row, 5, "N/A"));
         percentComplete = getCellFloat(row, 6, 0);
-        startDate = cleanString(getCellString(row, 7, "N/A"));
-        endDate = cleanString(getCellString(row, 8, "N/A"));
-        costCenter = getCellInt(row, 9, 0);
-        internalOrder = getCellInt(row, 10, 0);
-        fundFY = getCellInt(row, 11, 0);
-        budgetTotal = getCellFloat(row, 12, 0.0f);
-        budgetUsed = getCellFloat(row, 13, 0.0f);
-        budgetRemaining = getCellFloat(row, 14, 0.0f);
+        percentComplete *= 100;
+        fundFY = getCellInt(row, 7, 0);
+        startDate = cleanString(getCellString(row, 8, "N/A"));
+        endDate = cleanString(getCellString(row, 9, "N/A"));
+        costCenter = getCellInt(row, 10, 0);
+
+        //Handle Multiple IOs
+        for (int i = 11; i < 51; i+=5) {
+            Cell cell = row.getCell(i);
+            if (cell == null) {
+                System.out.println("No Internal Order.");
+            } else {
+                internalOrder.add(getCellInt(row, i, 0));
+                budgetTotal.add(getCellFloat(row, i + 1, 0));
+                expenses.add(getCellFloat(row, i + 2, 0));
+                commitments.add(getCellFloat(row, i + 3, 0));
+                budgetRemaining.add(getCellFloat(row, i + 4, 0));
+            }
+        }
         architect = cleanString(getCellString(row, 15, "N/A"));
         engineer = cleanString(getCellString(row, 16, "N/A"));
         contractor = cleanString(getCellString(row, 17, "N/A"));
 
-        percentComplete = percentComplete * 100;
     }
 
     private String cleanString(String input) {
@@ -208,7 +218,7 @@ public class Controller {
             contentStream.endText();
 
             // Description Start Box
-            contentStream.setFont(boldFont, 16);
+            contentStream.setFont(boldFont, 14);
             contentStream.beginText();
             contentStream.newLineAtOffset(margin, 518);
             contentStream.showText("Description: ");
@@ -216,7 +226,7 @@ public class Controller {
             wrapText(contentStream, regularFont, margin, 500, 14,docWidth, projectDescription);
 
             // Comments Start Box
-            contentStream.setFont(boldFont, 16);
+            contentStream.setFont(boldFont, 14);
             contentStream.beginText();
             contentStream.newLineAtOffset(margin, 348);
             contentStream.showText("Status Update: ");
@@ -247,17 +257,14 @@ public class Controller {
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 5);
             contentStream.showText(String.format("Estimated End Date: %s", endDate));
             contentStream.endText();
-
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 6);
             contentStream.showText(String.format("Architect: %s", architect));
             contentStream.endText();
-
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 7);
             contentStream.showText(String.format("Engineer: %s", engineer));
             contentStream.endText();
-
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 8);
             contentStream.showText(String.format("Contractor: %s", contractor));
@@ -272,48 +279,35 @@ public class Controller {
 
             // IO & Budget Table
             float tableYStart = 180; // Start below Comments section
-            float tableXStart = margin + (docWidth / 2) - 200; // Right half of the page
+            float tableXStart = margin + (docWidth / 2) - 350;
             float rowHeight = 20;
-            float[] columnWidths = {115, 135, 135, 135}; // Widths for I/O, Total Budget, Budget Used, Budget Remaining
-            float tableWidth = columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3];
+            float[] columnWidths = {115, 135, 135, 135, 135}; // Widths for I/O, Total Budget, Budget Used, Budget Remaining
+            float tableWidth = columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3] + columnWidths[4];
 
             // Draw table header
-            String[] headers = {"I/O", "Total Budget", "Budget Used", "Budget Remaining"};
+            String[] headers = {"I/O", "Total Budget", "Expenses", "Commitments", "Remaining"};
             contentStream.setNonStrokingColor(new Color(200, 200, 200)); // Light gray for header background
             contentStream.addRect(tableXStart, tableYStart - rowHeight, tableWidth, rowHeight);
             contentStream.fill();
             contentStream.setNonStrokingColor(Color.BLACK);
             contentStream.setLineWidth(1f);
-            drawTableGrid(contentStream, tableXStart, tableYStart, rowHeight, columnWidths, 2); // 2 rows (header + data)
+            drawTableGrid(contentStream, tableXStart, tableYStart, rowHeight, columnWidths, internalOrder.size() + 1); //dynamically create rows depending on number of IOs.
 
             // Draw header text
             contentStream.setFont(boldFont, 14);
-            float textX = tableXStart + 5; // Small padding inside cell
+            float textX = tableXStart + 5;
             for (int i = 0; i < headers.length; i++) {
                 contentStream.beginText();
-                contentStream.newLineAtOffset(textX, tableYStart - rowHeight + 4); // Center vertically
+                contentStream.newLineAtOffset(textX, tableYStart - rowHeight + 4);
                 contentStream.showText(headers[i]);
                 contentStream.endText();
                 textX += columnWidths[i];
             }
 
             // Draw data row
-            //TODO: handle multiple IOs.
-            String[] data = {
-                    String.valueOf(internalOrder),
-                    String.format(formatBudget(budgetTotal)),
-                    String.format(formatBudget(budgetUsed)),
-                    String.format(formatBudget(budgetRemaining))
-            };
-
             contentStream.setFont(regularFont, 12);
-            textX = tableXStart + 5;
-            for (int i = 0; i < data.length; i++) {
-                contentStream.beginText();
-                contentStream.newLineAtOffset(textX, tableYStart - 2 * rowHeight + 4);
-                contentStream.showText(data[i]);
-                contentStream.endText();
-                textX += columnWidths[i];
+            for (int ioIndex = 0; ioIndex < internalOrder.size(); ioIndex++) {
+                drawDataRow(contentStream, ioIndex, tableXStart, tableYStart, rowHeight, columnWidths);
             }
 
             //Footer (Page Number)
@@ -326,6 +320,28 @@ public class Controller {
         } catch (IOException e) {
             statusLabel.setText("Error: Failed to process file.");
             logger.error("Error processing file", e);
+        }
+    }
+
+    private void drawDataRow(PDPageContentStream contentStream, int ioIndex,
+                             float tableXStart, float tableYStart, float rowHeight, float[] columnWidths) throws IOException {
+        String[] data = {
+                String.valueOf(internalOrder.get(ioIndex)),
+                formatBudget(budgetTotal.get(ioIndex)),
+                formatBudget(expenses.get(ioIndex)),
+                formatBudget(commitments.get(ioIndex)),
+                formatBudget(budgetRemaining.get(ioIndex))
+        };
+
+        float textX = tableXStart + 5;
+        float currentRowY = tableYStart - (ioIndex + 2) * rowHeight + 4;
+
+        for (int i = 0; i < data.length; i++) {
+            contentStream.beginText();
+            contentStream.newLineAtOffset(textX, currentRowY);
+            contentStream.showText(data[i]);
+            contentStream.endText();
+            textX += columnWidths[i];
         }
     }
 
