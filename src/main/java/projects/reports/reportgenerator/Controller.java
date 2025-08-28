@@ -124,7 +124,7 @@ public class Controller {
         comments = cleanString(getCellString(row, 4, ""));
         workPhase = cleanString(getCellString(row, 5, "N/A"));
         percentComplete = getCellFloat(row, 6, 0);
-        percentComplete *= 100;
+        percentComplete = (int) (percentComplete * 100);
         fundFY = getCellInt(row, 7, 0);
         startDate = cleanString(getCellString(row, 8, "N/A"));
         endDate = cleanString(getCellString(row, 9, "N/A"));
