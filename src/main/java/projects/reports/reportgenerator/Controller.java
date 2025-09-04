@@ -201,16 +201,16 @@ public class Controller {
         try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
             PDType1Font boldFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
             PDType1Font regularFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
-            float margin = 30;
-            float yStart = 575; // Top of page
+            int margin = 30;
+            float yStart = 575;
 
-            // Header: Project Name and Page Number
+            // Header: Project Name and project manager
             Color headerColor = new Color(Integer.parseInt("FFC72C", 16));
             contentStream.setNonStrokingColor(headerColor);
             float pageWidth = page.getMediaBox().getWidth();
             contentStream.addRect(0, page.getMediaBox().getHeight() - 60, pageWidth, 60);
             contentStream.fill();
-            contentStream.setFont(boldFont, 20);
+            contentStream.setFont(boldFont, 21);
             contentStream.setNonStrokingColor(Color.BLACK);
             contentStream.beginText();
             contentStream.newLineAtOffset(margin - 15, yStart);
@@ -224,29 +224,29 @@ public class Controller {
             //Project Number Line
             contentStream.setFont(boldFont, 18);
             contentStream.beginText();
-            contentStream.newLineAtOffset((int) ((margin * 2) + (docWidth / 2)), 505);
+            contentStream.newLineAtOffset(margin - 5, 525);
             contentStream.showText(String.format("Project Number: %s", projectNumber));
             contentStream.endText();
 
             // Description Start Box
             contentStream.setFont(boldFont, 14);
             contentStream.beginText();
-            contentStream.newLineAtOffset(margin, 518);
+            contentStream.newLineAtOffset((docWidth / 2), 518);
             contentStream.showText("Description: ");
             contentStream.endText();
-            wrapText(contentStream, regularFont, margin, 500, 14,docWidth, projectDescription);
+            wrapText(contentStream, regularFont, (docWidth / 2), 500, 14, docWidth, projectDescription);
 
             // Comments Start Box
             contentStream.setFont(boldFont, 14);
             contentStream.beginText();
-            contentStream.newLineAtOffset(margin, 348);
+            contentStream.newLineAtOffset((docWidth / 2), 348);
             contentStream.showText("Status Update: ");
             contentStream.endText();
-            wrapText(contentStream, regularFont, margin, 330, 14, docWidth, comments);
+            wrapText(contentStream, regularFont, (docWidth / 2), 330, 14, docWidth, comments);
 
             // Info Start Box
-            int infoBoxYStart = 485;
-            int infoBoxXStart = (int) ((margin * 2) + (docWidth / 2));
+            int infoBoxYStart = 525;
+            int infoBoxXStart = margin - 5;
             contentStream.setFont(regularFont, 16);
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18);
@@ -264,10 +264,12 @@ public class Controller {
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 4);
             contentStream.showText(String.format("Start Date: %s", startDate));
             contentStream.endText();
+            contentStream.setFont(boldFont, 16);
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 5);
             contentStream.showText(String.format("Estimated End Date: %s", endDate));
             contentStream.endText();
+            contentStream.setFont(regularFont, 16);
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 6);
             contentStream.showText(String.format("Architect: %s", architect));
@@ -284,12 +286,12 @@ public class Controller {
             // costCenter Start Box
             contentStream.setFont(boldFont, 20);
             contentStream.beginText();
-            contentStream.newLineAtOffset(infoBoxXStart - 90, 200);
+            contentStream.newLineAtOffset(infoBoxXStart + 30, 200);
             contentStream.showText(String.format("Cost Center: %s", costCenter));
             contentStream.endText();
 
             // IO & Budget Table
-            float tableYStart = 180; // Start below Comments section
+            float tableYStart = 185; // Start below Comments section
             float tableXStart = margin + (docWidth / 2) - 350;
             float rowHeight = 20;
             float[] columnWidths = {115, 135, 135, 135, 135}; // Widths for I/O, Total Budget, Budget Used, Budget Remaining
@@ -347,6 +349,36 @@ public class Controller {
         float textX = tableXStart + 5;
         float currentRowY = tableYStart - (ioIndex + 2) * rowHeight + 4;
 
+        // Add yellow background to the "Remaining" column (column index 4)
+        float remainingColumnX = tableXStart + columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3];
+        contentStream.setNonStrokingColor(Color.YELLOW);
+        contentStream.addRect(remainingColumnX, tableYStart - (ioIndex + 2) * rowHeight, columnWidths[4], rowHeight);
+        contentStream.fill();
+
+        // Redraw the grid lines for this row to ensure they appear over the yellow background
+        contentStream.setStrokingColor(Color.BLACK);
+        contentStream.setLineWidth(1f);
+
+        // Draw horizontal lines for this row
+        float rowY = tableYStart - (ioIndex + 2) * rowHeight;
+        contentStream.moveTo(remainingColumnX, rowY);
+        contentStream.lineTo(remainingColumnX + columnWidths[4], rowY);
+        contentStream.stroke();
+        contentStream.moveTo(remainingColumnX, rowY + rowHeight);
+        contentStream.lineTo(remainingColumnX + columnWidths[4], rowY + rowHeight);
+        contentStream.stroke();
+
+        // Draw vertical lines for this column
+        contentStream.moveTo(remainingColumnX, rowY);
+        contentStream.lineTo(remainingColumnX, rowY + rowHeight);
+        contentStream.stroke();
+        contentStream.moveTo(remainingColumnX + columnWidths[4], rowY);
+        contentStream.lineTo(remainingColumnX + columnWidths[4], rowY + rowHeight);
+        contentStream.stroke();
+
+        // Reset color to black for text
+        contentStream.setNonStrokingColor(Color.BLACK);
+
         for (int i = 0; i < data.length; i++) {
             contentStream.beginText();
             contentStream.newLineAtOffset(textX, currentRowY);
@@ -385,7 +417,7 @@ public class Controller {
         String[] words = paragraph.split(" ");
         for (String word : words) {
             float wordWidth = font * regularFont.getStringWidth(word + " ") / 1000; // Width in points
-            if (currentX + wordWidth > (docWidth/2) + 30) { // Check if word exceeds page width
+            if (currentX + wordWidth > docWidth - 20) { // Check if word exceeds page width
                 contentStream.endText();
                 currentY -= lineHeight; // Move to next line
                 contentStream.beginText();
