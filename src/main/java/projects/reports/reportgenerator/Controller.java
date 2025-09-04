@@ -130,12 +130,20 @@ public class Controller {
         endDate = cleanString(getCellString(row, 9, "N/A"));
         costCenter = getCellInt(row, 10, 0);
 
+        //clear any values currently in array.
+        internalOrder.clear();
+        budgetTotal.clear();
+        expenses.clear();
+        commitments.clear();
+        budgetRemaining.clear();
+
         //Handle Multiple IOs
         for (int i = 11; i < 51; i+=5) {
             Cell cell = row.getCell(i);
             if (cell == null) {
-                System.out.println("No Internal Order.");
+                System.out.println("No Internal Order. Skipping...");
             } else {
+
                 internalOrder.add(getCellInt(row, i, 0));
                 budgetTotal.add(getCellFloat(row, i + 1, 0));
                 expenses.add(getCellFloat(row, i + 2, 0));
@@ -143,9 +151,9 @@ public class Controller {
                 budgetRemaining.add(getCellFloat(row, i + 4, 0));
             }
         }
-        architect = cleanString(getCellString(row, 15, "N/A"));
-        engineer = cleanString(getCellString(row, 16, "N/A"));
-        contractor = cleanString(getCellString(row, 17, "N/A"));
+        architect = cleanString(getCellString(row, 51, "N/A"));
+        engineer = cleanString(getCellString(row, 52, "N/A"));
+        contractor = cleanString(getCellString(row, 53, "N/A"));
 
     }
 
@@ -206,8 +214,11 @@ public class Controller {
             contentStream.setNonStrokingColor(Color.BLACK);
             contentStream.beginText();
             contentStream.newLineAtOffset(margin - 15, yStart);
-            contentStream.showText(String.format("%s: ", projectManager));
             contentStream.showText(projectName);
+            contentStream.endText();
+            contentStream.beginText();
+            contentStream.newLineAtOffset(485, yStart);
+            contentStream.showText(String.format("PM: %s", projectManager));
             contentStream.endText();
 
             //Project Number Line
