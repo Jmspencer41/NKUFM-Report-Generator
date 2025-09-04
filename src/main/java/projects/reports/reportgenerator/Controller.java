@@ -35,6 +35,7 @@ public class Controller {
     private String projectNumber;
     private String projectName;
     private String projectDescription;
+    private String commentDate;
     private String comments;
     private String workPhase;
     private String startDate;
@@ -43,9 +44,9 @@ public class Controller {
     private String engineer;
     private String contractor;
     private int fundFY;
-    private float percentComplete;
-    private int costCenter;
-    private ArrayList<Integer> internalOrder = new ArrayList<>();
+    private int percentComplete;
+    private String costCenter;
+    private ArrayList<String> internalOrder = new ArrayList<>();
     private ArrayList<Float> budgetTotal = new ArrayList<>();
     private ArrayList<Float> expenses = new ArrayList<>();
     private ArrayList<Float> commitments = new ArrayList<>();
@@ -121,14 +122,14 @@ public class Controller {
         projectNumber = cleanString(getCellString(row, 1, "N/A"));
         projectName = cleanString(getCellString(row, 2, "Untitled"));
         projectDescription = cleanString(getCellString(row, 3, ""));
-        comments = cleanString(getCellString(row, 4, ""));
-        workPhase = cleanString(getCellString(row, 5, "N/A"));
-        percentComplete = getCellFloat(row, 6, 0);
-        percentComplete = (int) (percentComplete * 100);
-        fundFY = getCellInt(row, 7, 0);
-        startDate = cleanString(getCellString(row, 8, "N/A"));
-        endDate = cleanString(getCellString(row, 9, "N/A"));
-        costCenter = getCellInt(row, 10, 0);
+        commentDate = cleanString(getCellString(row, 4, "N/A"));
+        comments = cleanString(getCellString(row, 5, ""));
+        workPhase = cleanString(getCellString(row, 6, "N/A"));
+        percentComplete = Math.round(getCellFloat(row, 7, 0) * 100);
+        fundFY = getCellInt(row, 8, 0);
+        startDate = cleanString(getCellString(row, 9, "N/A"));
+        endDate = cleanString(getCellString(row, 10, "TBD"));
+        costCenter = cleanString(getCellString(row, 11, "N/A"));
 
         //clear any values currently in array.
         internalOrder.clear();
@@ -138,22 +139,22 @@ public class Controller {
         budgetRemaining.clear();
 
         //Handle Multiple IOs
-        for (int i = 11; i < 51; i+=5) {
+        for (int i = 12; i < 52; i+=5) {
             Cell cell = row.getCell(i);
             if (cell == null) {
                 System.out.println("No Internal Order. Skipping...");
             } else {
 
-                internalOrder.add(getCellInt(row, i, 0));
+                internalOrder.add(cleanString(getCellString(row, i, "0")));
                 budgetTotal.add(getCellFloat(row, i + 1, 0));
                 expenses.add(getCellFloat(row, i + 2, 0));
                 commitments.add(getCellFloat(row, i + 3, 0));
                 budgetRemaining.add(getCellFloat(row, i + 4, 0));
             }
         }
-        architect = cleanString(getCellString(row, 51, "N/A"));
-        engineer = cleanString(getCellString(row, 52, "N/A"));
-        contractor = cleanString(getCellString(row, 53, "N/A"));
+        architect = cleanString(getCellString(row, 52, "N/A"));
+        engineer = cleanString(getCellString(row, 53, "N/A"));
+        contractor = cleanString(getCellString(row, 54, "N/A"));
 
     }
 
@@ -240,7 +241,7 @@ public class Controller {
             contentStream.setFont(boldFont, 14);
             contentStream.beginText();
             contentStream.newLineAtOffset((docWidth / 2), 348);
-            contentStream.showText("Status Update: ");
+            contentStream.showText(String.format("Status Update: %s ", commentDate));
             contentStream.endText();
             wrapText(contentStream, regularFont, (docWidth / 2), 330, 14, docWidth, comments);
 
@@ -254,7 +255,7 @@ public class Controller {
             contentStream.endText();
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 2);
-            contentStream.showText(String.format("Percent Complete: %s%%", percentComplete));
+            contentStream.showText(String.format("Percent Complete: %d%%", percentComplete));
             contentStream.endText();
             contentStream.beginText();
             contentStream.newLineAtOffset(infoBoxXStart, infoBoxYStart - 18 * 3);
